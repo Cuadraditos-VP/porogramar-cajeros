@@ -580,6 +580,8 @@ const LATE={MD:0,MS:1,T3:2,T:3,T1:3,TE:4,N:5,E1:6,E:7,X:8};   // de más tempran
 const TARDE=["T3","T","T1","TE"], MANANA=["MS","MD"];
 const nocheTardeManana=(x,y,z)=>esNoche(x) && TARDE.includes(y) && MANANA.includes(z);
 const ROT=s=>esNoche(s) ? 1 : 0;
+// después del franco, lo más tarde posible; cualquier noche da lo mismo (a pedido de Guillermo)
+const LATEF=s=>esNoche(s) ? 5 : LATE[s];
 const SIN_NOCHE=[];                               // legajos que nunca hacen noche (por ahora nadie)
 const esNoche=s=>s==="N"||s==="E1"||s==="E"||s==="X";
 const fam=s=>s==="T1"?"T":s;
@@ -891,7 +893,7 @@ function avisosCelda(p,d){
     if(q) out.push(`Antes del franco debería tener el turno más temprano (${q.nom} tiene ${q.t[d-1]})`);
   }
   if(OFFF.includes(prev)){
-    const q=people.find(q=>q!==p && TRAB.includes(q.t[d-1]) && LATE[q.t[d-1]]>LATE[c] && !OFFF.includes(d>1?q.t[d-2]:"") && cambiable(q));
+    const q=people.find(q=>q!==p && TRAB.includes(q.t[d-1]) && LATEF(q.t[d-1])>LATEF(c) && !OFFF.includes(d>1?q.t[d-2]:"") && cambiable(q));
     if(q) out.push(`Después del franco debería entrar lo más tarde posible (${q.nom} tiene ${q.t[d-1]})`);
   }
   // rotación: dentro del tramo, de más tarde a más temprano (se marca el día en que vuelve atrás)
@@ -1813,7 +1815,7 @@ function programarMes(rehacer){
   const antes=G.map(t=>t.slice());
   const libreC=(i,k)=>antes[i][k]==="" && !EVT.has(k+1);          // casillero que el programa puede llenar
   const PR=P.map((p,i)=>Array.from({length:N},(_,k)=>{ const tp=turnosPref(p,k+1);
-    const Ls=tp.P.map(s=>LATE[s]); return {H:tp.H, P:tp.P, minL:Math.min(...Ls), maxL:Math.max(...Ls), minR:Math.min(...tp.P.map(ROT)), noPuede:tp.noPuede}; }));
+    const Ls=tp.P.map(s=>LATE[s]); return {H:tp.H, P:tp.P, minL:Math.min(...Ls), maxL:Math.max(...Ls), minR:Math.min(...tp.P.map(ROT)), maxF:Math.max(...tp.P.map(LATEF)), noPuede:tp.noPuede}; }));
   const FN=P.map(p=>esFijoNoche(p)), PJ=P.map((p,i)=>parejaDe(i));
   // "hacen de todo": según sus preferencias pueden hacer noche y también turnos de día (no son fijos de noche)
   const flexible=P.map((p,i)=>!FN[i] && PR[i].some(x=>x.P.some(esNoche)) && PR[i].some(x=>x.P.some(s=>!esNoche(s))));
@@ -1906,7 +1908,7 @@ function programarMes(rehacer){
     const a=k>0?G[i][k-1]:"", b=k<N-1?G[i][k+1]:"";
     if(a && prohibido(a,s)) c+=W.HARD;
     if(b && (TRAB.includes(b)||LIBRE.includes(b)) && prohibido(s,b)) c+=W.HARD;
-    if(OFFF.includes(a)) c+=W.P2*Math.max(0,pr.maxL-LATE[s]);
+    if(OFFF.includes(a)) c+=W.P2*Math.max(0,pr.maxF-LATEF(s));
     if(OFFF.includes(b)) c+=W.P1*Math.max(0,LATE[s]-pr.minL);
     const mn=minLAntes(i,k); if(ROT(s)>Math.max(mn,pr.minR) && !(FN[i] && esNoche(s))) c+=W.P4;
     if(a && esNoche(a) && TRAB.includes(s) && !esNoche(s) && !(a==="E" && s==="T")) c+=W.P7;   // de noche a día: mejor de E a T
@@ -1961,7 +1963,7 @@ function programarMes(rehacer){
       const pr=PR[i][k];
       if(!pr.H.includes(s)) c+=W.HARD;
       if(!pr.P.includes(s)) c+=W.P3;
-      if(a){ if(prohibido(a,s)) c+=W.HARD; if(OFFF.includes(a)) c+=W.P2*Math.max(0,pr.maxL-LATE[s]); }
+      if(a){ if(prohibido(a,s)) c+=W.HARD; if(OFFF.includes(a)) c+=W.P2*Math.max(0,pr.maxF-LATEF(s)); }
       if(k<N-1 && OFFF.includes(t[k+1])) c+=W.P1*Math.max(0,LATE[s]-pr.minL);
       if(a && esNoche(a) && !esNoche(s) && !(a==="E" && s==="T")) c+=W.P7;   // de noche a día: mejor de E a T
       if(k>1 && nocheTardeManana(t[k-2],a,s)) c+=W.P8;                     // N T MS: mejor otra tarde en el medio
