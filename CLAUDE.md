@@ -41,8 +41,8 @@ Sin video/imagen de inicio (a pedido de Guillermo).
 propio, para no confundirla con la app de cajeros (que tiene el chaleco).
 En pantalla la fila de días de arriba no queda fija (`#gridCard .grid thead th{top:auto}`: confundía, los demás grupos
 parecían el grupo 1) y la ruedita salta de grupo en grupo (listener `wheel` sobre `#gridCard`; shift/ctrl/horizontal normal).
-Condicionales de grilla y totales apagados
-(`CONDICIONALES = false`, son distintos a jefes); el franco en rojo del resumen queda.
+Condicionales de grilla y totales prendidos (como en programar-jefes) con los avisos de los criterios nuevos (N T MS, SA-DO/DO-LU partido);
+`CONDICIONALES = true`; el franco en rojo del resumen queda.
 No es gemela de progjefes ni de la app de cajeros: los cambios de acá no van a otros repositorios.
 
 

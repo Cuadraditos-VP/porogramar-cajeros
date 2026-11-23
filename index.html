@@ -648,7 +648,7 @@ let STORE={meses:{}};
 try{ const raw=localStorage.getItem(STORE_KEY); if(raw) STORE=JSON.parse(raw)||{meses:{}}; }catch(e){}
 if(!STORE.meses) STORE.meses={};
 function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); }catch(e){} if(typeof syncAgendar==="function") syncAgendar(); }
-let AMBAR=true, EDIT_ORIG=false;   // EDIT_ORIG: corrigiendo un mes registrado (habilitado con clave)
+let AMBAR=true, FASE_AV={}, EDIT_ORIG=false;   // EDIT_ORIG: corrigiendo un mes registrado (habilitado con clave)
 const MES_VACIO={t:{},fp:[],fer:[],evt:{},lista:[],vacio:true};   // mientras no hay ningún mes (antes de entrar)
 const curMonth = () => STORE.meses[keyOf(Y,MO)] || MES_VACIO;
 const SOLO_LECT=()=>curMonth().vacio || (!!curMonth().reg && !EDIT_ORIG);   // registrado = congelado (solo lectura)
@@ -813,7 +813,7 @@ function stats(p){
 // Condicionales de la grilla y los totales (ámbar en los turnos, rojo/ámbar en los totales): a pedido de Guillermo,
 // por ahora apagados, porque los de cajeros son distintos a los de jefes. Para volver a mostrarlos: true.
 // Los francos en rojo del resumen siguen (a pedido de él).
-const CONDICIONALES = false;
+const CONDICIONALES = true;   // prendidos de nuevo a pedido de Guillermo, con los criterios nuevos de Programar
 let SHOW_V = true; // resumen por cajero visible
 const auxCols = () => SHOW_V ? 1 + STAT.length : 0; // separador + francos + horas extra
 const auxTd = cls => SHOW_V ? `<td class="${cls}" colspan="${auxCols()}"></td>` : '';
@@ -872,7 +872,13 @@ function avisosCelda(p,d){
   const t=p.t, c=t[d-1], prev=d>1?t[d-2]:"", next=d<N_DAYS?t[d]:"", out=[];
   if(EVT.has(d) || !c) return out;
   if(prev && !EVT.has(d-1) && prohibido(prev,c)) out.push(`Pase no permitido: ${prev} → ${c}`);
+  if(c==="F"){   // franco de la rueda en SA-DO o DO-LU: van juntos
+    const k=d-1, en=x=>enRueda(FASE_AV,p.g,x), fr=x=>OFFF.includes(t[x]);
+    [[k-1,k],[k,k+1]].forEach(([a,b])=>{ if(a>=0 && b<N_DAYS && parFinde(a) && en(a) && en(b) && !(fr(a) && fr(b)))
+      out.push(`Franco partido: el ${dayAb(a+1)}-${dayAb(b+1)} de la rueda va junto`); });
+  }
   if(!TRAB.includes(c)) return out;
+  if(MANANA.includes(c) && d>2 && nocheTardeManana(t[d-3],prev,c)) out.push(`De noche a la mañana con una sola tarde en el medio (${t[d-3]} → ${prev} → ${c})`);
   if(SIN_NOCHE.includes(p.leg) && esNoche(c)) out.push(`${p.nom} no puede hacer ${c}`);
   const i=people.indexOf(p), tp=turnosPref(p,d);
   // ¿se podía cambiar con q ese día sin romper nada obligatorio?
@@ -937,7 +943,8 @@ document.getElementById("togPrev").onclick=()=>{
   render();
 };
 function render(){
-  AMBAR = CONDICIONALES;   // ámbar (situaciones no ideales): por ahora apagado en cajeros
+  AMBAR = CONDICIONALES;   // ámbar (situaciones no ideales)
+  FASE_AV = AMBAR ? ruedaGrupos() : {};   // rueda de francos de cada grupo, para el aviso de SA-DO / DO-LU partido
   const PV = prevDia();   // último día del mes anterior (null si está oculto)
   let h = '<colgroup><col class="leg"><col class="nom">' + (PV ? '<col class="prev">' : '');
   for(let d=1; d<=N_DAYS; d++) h += '<col>';
