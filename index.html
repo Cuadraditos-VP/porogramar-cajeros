@@ -668,6 +668,10 @@ function loadMonth(k){
   if(!m.lista) m.lista=[];
   buildPeople(m);
   FP=new Set(m.fp||[]); FER=new Set(m.fer||[]); EVT=new Map(Array.isArray(m.evt) ? m.evt.map(d=>[d,""]) : Object.entries(m.evt||{}).map(([d,n])=>[+d,n]));
+  if(MO===12 && !m.reg){   // diciembre: el 24 y el 31 como evento especial (cuentan como franco)
+    let nuevo=false; Object.entries(DIC_FRANCOS).forEach(([d,n])=>{ if(!EVT.has(+d)){ EVT.set(+d,n); nuevo=true; } });
+    if(nuevo) m.evt=Object.fromEntries(EVT);
+  }
   STORE.actual=k; persist();
   document.getElementById("mLabel").textContent=`· ${MESES[MO-1]} ${Y}`;
   document.title=`Cajeros ${MESES[MO-1][0]+MESES[MO-1].slice(1).toLowerCase()} ${Y}`;
@@ -767,7 +771,10 @@ const AVISOS_DIA = {
                    return Math.abs(n-ide)>2 ? `N y T: con ${tot} entre los dos, lo ideal son unos ${ide} N y ${tot-ide} T${esVispera(d)?" (víspera: más N que T)":""}` : ""; }
 };
 // Resumen por cajero: francos del mes (enero, febrero y marzo: 6; resto: 6 si el mes tiene 30 días, 7 si tiene 31)
-const francosMes = () => MO<=3 ? 6 : (N_DAYS===31 ? 7 : 6);
+// Diciembre (todos los años): el 24 y el 31 se consideran franco para todos (a pedido de Guillermo). Quedan a la vista
+// como evento especial (el programa no los toca) y se programan 2 francos menos.
+const DIC_FRANCOS = {24:"Nochebuena (franco)", 31:"Fin de año (franco)"};
+const francosMes = () => (MO<=3 ? 6 : (N_DAYS===31 ? 7 : 6)) - (MO===12 ? Object.keys(DIC_FRANCOS).length : 0);
 
 // Resumen por cajero: solo los francos del mes y las horas extra del período (26 del mes anterior → 25 de este)
 const STAT = [["F",["F"]],["HE",[]]];
@@ -1848,13 +1855,15 @@ function programarMes(rehacer){
     // los pares sábado-domingo y domingo-lunes no se parten (a pedido de Guillermo): van primero, siempre completos
     const esSD=tr=>tr.length===2 && parFinde(tr[0]);
     tramos.sort((a,b)=> esSD(b)-esSD(a) || a.reduce((s,k)=>s+fueraGrupo(k),0)/a.length - b.reduce((s,k)=>s+fueraGrupo(k),0)/b.length || a[0]-b[0]);
+    // si no alcanzan para todos los días de la rueda (diciembre: 5), primero los pares SA-DO / DO-LU completos,
+    // después un día de cada uno de los otros pares (así ningún tramo queda sin franco) y por último el segundo día
+    const otros=tramos.filter(t=>!esSD(t));
     miembros.forEach(i=>{
-      for(const tr of tramos){ if(falta[i]<=0) break;
-        const ks=tr.filter(k=>fOK(i,k) && hay(k,1));
-        if(esSD(tr) && (ks.length<2 || falta[i]<2) && tramos.some(t=>!esSD(t))) continue;   // SA-DO o DO-LU: juntos o nada
-        if(ks.length===2 && falta[i]===1) { ponF(i,ks[0]); continue; }
-        ks.forEach(k=>{ if(falta[i]>0) ponF(i,k); });
-      }
+      const ks=tr=>tr.filter(k=>fOK(i,k) && hay(k,1));
+      for(const tr of tramos){ if(!esSD(tr) || falta[i]<=0) continue;
+        const l=ks(tr); if((l.length===2 && falta[i]>=2) || !otros.length) l.forEach(k=>{ if(falta[i]>0) ponF(i,k); }); }   // SA-DO o DO-LU: juntos o nada
+      for(const tr of otros){ if(falta[i]<=0) break; const l=ks(tr); if(l.length) ponF(i,l[0]); }
+      for(const tr of otros){ if(falta[i]<=0) break; ks(tr).forEach(k=>{ if(falta[i]>0) ponF(i,k); }); }
     });
   });
   // 1b) si todavía falta (la rueda no alcanza o choca con lo cargado): de a 2 días seguidos, repartidos en el mes
