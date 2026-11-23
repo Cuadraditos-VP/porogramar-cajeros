@@ -1928,7 +1928,11 @@ function programarMes(rehacer){
   const NHE=Math.min(25,N), HT=[]; for(let k=0;k<NHE;k++){ HT[k]={}; ORDEN_TURNOS.concat(["T1"]).forEach(s=>HT[k][s]=horasTurno(keyOf(Y,MO),k+1,s)); }
   const HEant=P.map(p=>horasExtra(p).ant);
   const ausente=c=>LIBRE.includes(c) && c!=="F";
-  const HEdisp=P.map((p,i)=>{ let d=0; for(let k=0;k<NHE;k++) if(!ausente(G[i][k])) d++; return d; });
+  // días disponibles en todo el período: del 26 del mes anterior (su programación inicial) al 25 de este
+  const HEdisp=P.map((p,i)=>{ let d=0; for(let k=0;k<NHE;k++) if(!ausente(G[i][k])) d++;
+    const ka=mesAntK(keyOf(Y,MO)), pm=STORE.meses[ka], pt=pm && (pm.ini||pm.t||{})[p.leg];
+    if(pm){ const nd=new Date(...parseKey(ka),0).getDate(); for(let x=26;x<=nd;x++) if(!ausente(pt ? pt[x-1] : "")) d++; }
+    return d; });
   const heDe=i=>{ const t=G[i]; let h=HEant[i]; for(let k=0;k<NHE;k++) if(!EVT.has(k+1)||BLOQUE.includes(t[k])) h+=HT[k][t[k]]||0; return h; };
   let HEobj=P.map(()=>0);
   const calcHE=()=>{ const tot=P.reduce((a,p,i)=>a+heDe(i),0), disp=HEdisp.reduce((a,b)=>a+b,0)||1; HEobj=HEdisp.map(d=>tot*d/disp); };
