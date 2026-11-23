@@ -24,6 +24,10 @@ Sin nombres en el HTML: la lista (`m.lista`: leg, nom, g, o) se trae de `turnos_
 Colores de fábrica = los de cajeros (y los publicados en la colección `cajeros`). Reglas del día en `cupos(d)` (sacadas
 de oct/nov 2026): MS 7; MD 2 VI/SA/DO/feriado; T3 5 SA/DO, 3 resto; víspera (VI, SA, antes de feriado): TE 9, E 7, X 2;
 JU: E 3, E1 3, X 2; resto E 4; N y T el resto. Francos: rueda por grupo, 2 cada 8 días (`ruedaGrupos`).
+Criterios de Programar acordados con Guillermo: los pares de francos SA-DO y DO-LU de la rueda no se parten (`parFinde`; a otros
+pares se les puede sacar un día); rotación entre francos de más tarde a más temprano, con las noches (N, E1, E, X) como un solo
+nivel (`ROT`: N E N sí, N T N no); de noche a día mejor de E a T (`P7`); horas extra del período parejas (`EQUILIBRAR_HE`,
+`PG_W.HE`, proporcional a los días sin LAO/licencia).
 Resumen (a pedido de Guillermo): solo F del mes y HE = horas extra del 26 del mes anterior al 25 de este (`horasExtra`,
 `OT_TABLE`/`tipoDia` iguales a los de cajeros); del mes anterior se toma su programación inicial (`m.ini`, que trae
 `mesDeCajeros` desde `inicial` de turnos_cajeros; si no hay, `m.t`).
