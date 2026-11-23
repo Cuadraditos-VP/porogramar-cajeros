@@ -1755,6 +1755,7 @@ function pgCostoDia(cnt, d){
 
 /* ---- RUEDA DE FRANCOS POR GRUPO: 2 días de franco cada 8. Para cada grupo se busca en qué día de la rueda está,
    mirando los francos que ya hay (los últimos días del mes anterior y lo cargado en este mes). ---- */
+const parFinde=k=>["SA","DO"].includes(dayAb(k+1));   // par de la rueda que empieza el día k (0 = el 1): SA-DO o DO-LU
 function ruedaGrupos(){
   const fase={}, prevK=(()=>{ let y=Y, m=MO-1; if(m<1){ m=12; y--; } return keyOf(y,m); })();
   const pm=STORE.meses[prevK], pn=new Date(Y,MO-1,0).getDate();
@@ -1832,10 +1833,13 @@ function programarMes(rehacer){
     const tramos=[]; for(let k=0;k<N;k++) if(enRueda(FASE,g,k) && (k===0 || !enRueda(FASE,g,k-1))){ const l=[k]; if(k+1<N && enRueda(FASE,g,k+1)) l.push(k+1); tramos.push(l); }
     // tramos con más gente de franco ese día (sin contar al grupo) van al final
     const fueraGrupo=k=>{ let c=0; G.forEach((t,i)=>{ if(P[i].g!==g && esLibreDia(t[k])) c++; }); return c; };
-    tramos.sort((a,b)=> a.reduce((s,k)=>s+fueraGrupo(k),0)/a.length - b.reduce((s,k)=>s+fueraGrupo(k),0)/b.length || a[0]-b[0]);
+    // los pares sábado-domingo y domingo-lunes no se parten (a pedido de Guillermo): van primero, siempre completos
+    const esSD=tr=>tr.length===2 && parFinde(tr[0]);
+    tramos.sort((a,b)=> esSD(b)-esSD(a) || a.reduce((s,k)=>s+fueraGrupo(k),0)/a.length - b.reduce((s,k)=>s+fueraGrupo(k),0)/b.length || a[0]-b[0]);
     miembros.forEach(i=>{
       for(const tr of tramos){ if(falta[i]<=0) break;
         const ks=tr.filter(k=>fOK(i,k) && hay(k,1));
+        if(esSD(tr) && (ks.length<2 || falta[i]<2) && tramos.some(t=>!esSD(t))) continue;   // SA-DO o DO-LU: juntos o nada
         if(ks.length===2 && falta[i]===1) { ponF(i,ks[0]); continue; }
         ks.forEach(k=>{ if(falta[i]>0) ponF(i,k); });
       }
@@ -1948,6 +1952,9 @@ function programarMes(rehacer){
       if(L>Math.max(mn,pr.minR) && !(FN[i] && esNoche(s) && TRAB.includes(a) && esNoche(a))){ c+=W.P4; mn=L; }
       else mn=Math.min(mn,L);
     }
+    for(let k=0;k+1<N;k++) if(parFinde(k) && rueda(i,k) && rueda(i,k+1)){        // SA-DO o DO-LU de la rueda: juntos
+      const fa=OFFF.includes(t[k]), fb=OFFF.includes(t[k+1]);
+      if(fa!==fb && (antes[i][k]==="" || antes[i][k+1]==="")) c+=W.RUEDA; }
     const pj=PJ[i];
     if(pj>=0){ const u=G[pj]; for(let k=0;k<N;k++){ const a=t[k], b=u[k];
       if(TRAB.includes(a)&&TRAB.includes(b)&&a!==b) c+=W.P5;
