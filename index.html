@@ -574,12 +574,12 @@ const TRAB=["MD","MS","T3","T","T1","TE","N","E1","E","X"];
 const OFFF=["F","14F","FC","DV","LAO","LIC"];   // cuentan como franco (antes / después del franco)
 const LIBRE=OFFF.slice();                        // días que no trabaja
 const LATE={MD:0,MS:1,T3:2,T:3,T1:3,TE:4,N:5,E1:6,E:7,X:8};   // de más temprano a más tarde
-// para la rotación (entre franco y franco no se vuelve a un turno más tarde): las noches cuentan como uno solo,
-// así N E N o E X E están bien, pero N T N no (a pedido de Guillermo)
+// para la rotación (entre franco y franco, de la noche al día; no se vuelve a la noche): las noches cuentan como uno solo
+// y los turnos de día también (a pedido de Guillermo): N E N o T TE MS están bien, T N no
 // de noche a la mañana con una sola tarde en el medio (N T MS, E TE MD…): se trata de evitar (a pedido de Guillermo)
 const TARDE=["T3","T","T1","TE"], MANANA=["MS","MD"];
 const nocheTardeManana=(x,y,z)=>esNoche(x) && TARDE.includes(y) && MANANA.includes(z);
-const ROT=s=>/^(N|E1|E|X)$/.test(s) ? 5 : LATE[s];
+const ROT=s=>esNoche(s) ? 1 : 0;
 const SIN_NOCHE=[];                               // legajos que nunca hacen noche (por ahora nadie)
 const esNoche=s=>s==="N"||s==="E1"||s==="E"||s==="X";
 const fam=s=>s==="T1"?"T":s;
