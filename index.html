@@ -774,6 +774,8 @@ const AVISOS_DIA = {
 // Diciembre (todos los años): el 24 y el 31 se consideran franco para todos (a pedido de Guillermo). Quedan a la vista
 // como evento especial (el programa no los toca) y se programan 2 francos menos.
 const DIC_FRANCOS = {24:"Nochebuena (franco)", 31:"Fin de año (franco)"};
+// Diciembre: del 26 al 30 el programa no pone francos (a pedido de Guillermo; los cargados a mano se respetan)
+const sinFrancoProg = d => MO===12 && d>=26 && d<=30;
 const francosMes = () => (MO<=3 ? 6 : (N_DAYS===31 ? 7 : 6)) - (MO===12 ? Object.keys(DIC_FRANCOS).length : 0);
 
 // Resumen por cajero: solo los francos del mes y las horas extra del período (26 del mes anterior → 25 de este)
@@ -1756,7 +1758,7 @@ document.addEventListener("mousedown",e=>{ if(jp.style.display==="block" && !jp.
      4. Rotación de más tarde a más temprano (no volver atrás dentro del mismo tramo)
      5. Parejas: mismo turno y mismos francos
      6. Reparto parejo de noches, tardes y mañanas entre los que hacen de todo */
-const PG_W = { HARD:100000, PAREC:20000, IDEAL:3000, RUEDA:6000, P1:400, P2:300, P3:200, P4:100, P5:40, P6:12, P7:60, P8:150, HE:3 };
+const PG_W = { HARD:100000, PAREC:20000, IDEAL:3000, RUEDA:6000, P1:400, P2:300, P3:200, P4:300, P5:40, P6:12, P7:60, P8:150, HE:3 };
 // Programar: tratar de que las horas extra del período queden parejas entre todos (ensayo, a pedido de Guillermo)
 let EQUILIBRAR_HE = true;
 const famDe = s => esNoche(s) ? "noche" : (s==="MD"||s==="MS") ? "manana" : "tarde";
@@ -1837,7 +1839,7 @@ function programarMes(rehacer){
   const francosDe=i=>G[i].filter((c,k)=>esFranco(c,k)).length;
   const falta=P.map((p,i)=>{ if(!G[i].some((c,k)=>libreC(i,k))) return 0; return Math.max(0,fReq-francosDe(i)); });
   // un franco en el día k no debe crear un pase prohibido con lo que ya está cargado
-  const fOK=(i,k)=>{ if(!libreC(i,k) || G[i][k]!=="") return false;
+  const fOK=(i,k)=>{ if(!libreC(i,k) || G[i][k]!=="" || sinFrancoProg(k+1)) return false;
     const a=k>0?G[i][k-1]:"", b=k<N-1?G[i][k+1]:"";
     if(a && TRAB.includes(a) && prohibido(a,"F")) return false;
     if(b && TRAB.includes(b) && prohibido("F",b)) return false;
@@ -2039,7 +2041,7 @@ function programarMes(rehacer){
       const i=movibles[Math.floor(R()*movibles.length)];
       const xs=[]; for(let k=0;k<N;k++) if(movF[i][k]) xs.push(k);
       const x=xs[Math.floor(R()*xs.length)], y=Math.floor(R()*N);
-      if(x===y || !libreT(i,y) || !TRAB.includes(G[i][y])) continue;
+      if(x===y || !libreT(i,y) || !TRAB.includes(G[i][y]) || sinFrancoProg(y+1)) continue;
       if(rueda(i,x) && !rueda(i,y)) continue;                // un franco de la rueda del grupo no sale de la rueda
       const pj=PJ[i], quien=[i];
       if(pj>=0 && G[pj][x]==="F" && movF[pj][x] && libreT(pj,y) && TRAB.includes(G[pj][y])) quien.push(pj);   // la pareja se mueve junta
