@@ -485,9 +485,9 @@
   <div id="apBody">
     <p class="ap-p">Completa los casilleros vacíos. Lo que cargaste a mano se respeta y los días con evento no se tocan. Si a alguien le faltan francos, se los pone siguiendo la rueda de su grupo (2 de franco cada 8 días, como en la app de cajeros).</p>
     <p class="ap-p">Cada día: 7 MS · MD 2 (VI, SA, DO y feriados) · T3 3 (5 SA y DO) · TE 9, E 7 y X 2 en las vísperas (VI, SA y el día antes de un feriado) · E 4 los demás días (JU: 3 E + 3 E1 + 2 X) · el resto N y T.</p>
-    <p class="ap-p">Prioridades: 1) antes del franco, el turno más temprano · 2) después del franco, el más tarde · 3) preferencias · 4) rotación de más tarde a más temprano · 5) parejas · 6) reparto parejo.</p>
+    <p class="ap-p">Prioridades: 1) antes del franco, el turno más temprano · 2) después del franco, el más tarde · 3) preferencias · 4) rotación: de la noche al día, sin volver a la noche · 5) de noche a la mañana con dos tardes en el medio · 6) horas extra parejas · 7) parejas.</p>
     <label class="ap-ck" id="apRehWrap"><input type="checkbox" id="apRehacer"> Rehacer: borrar antes lo que programó la vez anterior (lo cargado a mano se mantiene)</label>
-    <div class="ap-row"><button id="apCancel">Cancelar</button><button class="go" id="apGo">Programar</button></div>
+    <div class="ap-row"><button id="apBorrar" title="Deja el mes como estaba antes de programar: solo queda lo cargado a mano" style="margin-right:auto">Anular lo programado</button><button id="apCancel">Cancelar</button><button class="go" id="apGo">Programar</button></div>
   </div>
   <div id="apRes" style="display:none"></div>
 </div>
@@ -2087,11 +2087,19 @@ document.getElementById("btnAuto").onclick=e=>{
   document.getElementById("apMes").textContent=`· ${MESES[MO-1]} ${Y}`;
   document.getElementById("apRehWrap").style.display = hay ? "" : "none";
   document.getElementById("apRehacer").checked = !!hay;
+  document.getElementById("apBorrar").style.display = hay ? "" : "none";
   document.getElementById("apBody").style.display="block"; document.getElementById("apRes").style.display="none";
   const r=e.currentTarget.getBoundingClientRect();
   ap.style.left=Math.max(8,Math.min(r.left, innerWidth-400))+"px"; ap.style.top=(r.bottom+6)+"px"; ap.style.display="block";
 };
 document.getElementById("apCancel").onclick=()=>{ ap.style.display="none"; };
+// anular lo programado (a pedido de Guillermo): borra los casilleros que completó el programa; lo cargado a mano queda
+document.getElementById("apBorrar").onclick=()=>{
+  const m=curMonth(); if(SOLO_LECT() || !m.auto) return;
+  if(!confirm(`¿Anular lo programado de ${MESES[MO-1].toLowerCase()} ${Y}? Se borran los turnos y francos que puso el programa; lo que cargaste a mano queda.`)) return;
+  people.forEach(p=>{ (m.auto[p.leg]||[]).forEach(d=>{ if(!EVT.has(d)) p.t[d-1]=""; }); });
+  m.auto={}; save(); render(); ap.style.display="none";
+};
 document.getElementById("apGo").onclick=()=>{
   const go=document.getElementById("apGo"); go.disabled=true; go.textContent="Programando…";
   setTimeout(()=>{
