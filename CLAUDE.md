@@ -24,7 +24,7 @@ Sin nombres en el HTML: la lista (`m.lista`: leg, nom, g, o) se trae de `turnos_
 Colores de fábrica = los de cajeros (y los publicados en la colección `cajeros`). Reglas del día en `cupos(d)` (sacadas
 de oct/nov 2026): MS 7; MD 2 VI/SA/DO/feriado; T3 5 SA/DO, 3 resto; víspera (VI, SA, antes de feriado): TE 9, E 7, X 2;
 JU: E 3, E1 3, X 2; resto E 4; N y T el resto. Francos: rueda por grupo, 2 cada 8 días (`ruedaGrupos`).
-Diciembre (todos los años): 24 y 31 se consideran franco: se marcan solos como evento especial (`DIC_FRANCOS`, en `loadMonth`) y `francosMes` da 2 menos (5); si los francos no alcanzan para la rueda, primero los pares SA-DO/DO-LU completos, después un día de cada otro par. Del 26 al 30 de diciembre el programa no pone francos (`sinFrancoProg`).
+Diciembre (todos los años): 24 y 31 se consideran franco: se marcan solos como evento especial (`DIC_FRANCOS`, en `loadMonth`) y `francosMes` da 2 menos (5); si los francos no alcanzan para la rueda, primero los pares SA-DO/DO-LU completos, después un día de cada otro par. Del 26 al 30 de diciembre el programa no pone francos (`sinFrancoProg`). El que está de noche el 23 va a la tarde (T, T3, TE) el 30 y viceversa (`cruce2330`, con aviso en ámbar).
 Criterios de Programar acordados con Guillermo: los pares de francos SA-DO y DO-LU de la rueda no se parten (`parFinde`; a otros
 pares se les puede sacar un día); rotación entre francos de más tarde a más temprano, con las noches (N, E1, E, X) como un solo
 nivel y los de día también (`ROT`: N E N sí, T TE MS sí, T N no); de noche a día mejor de E a T (`P7`); después del franco lo más tarde posible, cualquier noche da lo mismo (`LATEF`); horas extra del período parejas (`EQUILIBRAR_HE`,
