@@ -397,8 +397,8 @@
   .cal-g button.cur{background:var(--accent);border-color:var(--accent);color:#fff}
   .cal-g button.sel{box-shadow:0 0 0 2px var(--accent)}
   .cal-g button:hover:not(.cur){border-color:var(--accent)}
-  .cal-f{margin-top:10px;font-size:12px;color:var(--muted);min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-  .cal-f span{flex:1;line-height:1.35}
+  .cal-f{margin-top:10px;font-size:12px;color:var(--muted);min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .cal-f span{flex:1 1 100%;line-height:1.35}
   .cal-f .go.cal-del{background:#fff;color:#A00000;border:1px solid #E3B4B4}
   .cal-f .go{white-space:nowrap;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:700 12px Inter,Arial,sans-serif;cursor:pointer}
 
@@ -1365,6 +1365,11 @@ function drawCal(){
   if(calSel && !STORE.meses[calSel] && typeof traerMesCajeros==="function" && NUBE.rol==="admin" && NUBE.ok){
     f.insertAdjacentHTML("beforeend",`<button class="go cal-del" id="calTraer" title="Trae ese mes tal cual está en la app de cajeros (queda registrado, de consulta)">De la app de cajeros</button>`);
     document.getElementById("calTraer").onclick=()=>{ cal.style.display="none"; traerMesCajeros(calSel); };
+  }
+  if(typeof reponerInicial==="function" && NUBE.rol==="admin" && NUBE.ok){   // la programación inicial de la app de cajeros (para recuperar un mes borrado)
+    const kI=calSel && !STORE.meses[calSel] ? calSel : cur;
+    f.insertAdjacentHTML("beforeend",`<button class="go cal-del" id="calIni" title="Pone en ${nomMes(kI)} la programación inicial que tiene la app de cajeros (para recuperar un mes borrado)">Inicial de cajeros (${MES_C[parseKey(kI)[1]-1]})</button>`);
+    document.getElementById("calIni").onclick=()=>{ cal.style.display="none"; reponerInicial(kI); };
   }
   if(typeof abrirBorrarMeses==="function" && NUBE.rol==="admin" && NUBE.ok){
     f.insertAdjacentHTML("beforeend",`<button class="go cal-del" id="calDel">🗑 Borrar meses…</button>`);
@@ -2773,6 +2778,20 @@ async function traerMesCajeros(k){
     STORE.meses[k]=mesDeCajeros(k,x.d); persist(); loadMonth(k);
     historial({mes:k, otros:["trajo el mes de la app de cajeros"]});
     nubeMsg(`${nomMes(k)} traído de la app de cajeros (registrado: para cambiarlo, tocá «Registrado»).`);
+  }catch(e){ nubeMsg("No se pudo leer la app de cajeros."); }
+}
+// admin: pone en el mes k la programación INICIAL de la app de cajeros (para recuperar un mes borrado sin querer)
+async function reponerInicial(k){
+  try{
+    const x=await mesDeLaApp(k,false);
+    if(!x){ nubeMsg(`La app de cajeros no tiene ${nomMes(k)}.`); return; }
+    const c=mesDeCajeros(k,x.d), m=STORE.meses[k];
+    if(m && !confirm(`¿Reemplazar la programación de ${nomMes(k)} por la inicial de la app de cajeros?\n\nLo que hay ahora en ${nomMes(k)} se pierde.`)) return;
+    if(m){ m.t=c.ini; m.ini=c.ini; m.lista=c.lista; if(!(m.fer||[]).length) m.fer=c.fer; delete m.deCajeros; }
+    else STORE.meses[k]={t:c.ini, ini:c.ini, fp:[], fer:c.fer, evt:{}, lista:c.lista};
+    persist(); loadMonth(k);
+    historial({mes:k, otros:["puso la programación inicial de la app de cajeros"]});
+    nubeMsg(`${nomMes(k)}: se puso la programación inicial de la app de cajeros.`);
   }catch(e){ nubeMsg("No se pudo leer la app de cajeros."); }
 }
 async function ofrecerSubida(){
