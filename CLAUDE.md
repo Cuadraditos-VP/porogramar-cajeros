@@ -41,7 +41,7 @@ Sin video/imagen de inicio (a pedido de Guillermo).
 Ícono propio (almanaque con casilleros de colores, franja bordó, fondo azul: `icon-*.png`) y manifest con `id`
 propio, para no confundirla con la app de cajeros (que tiene el chaleco).
 En pantalla la fila de días de arriba no queda fija (`#gridCard .grid thead th{top:auto}`: confundía, los demás grupos
-parecían el grupo 1) y la ruedita salta de grupo en grupo (listener `wheel` sobre `#gridCard`; shift/ctrl/horizontal normal).
+parecían el grupo 1) y el desplazamiento es como en Cajeros: ruedita normal (sin saltos); flechas ↑ ↓ y Re Pág/Av Pág saltan de grupo en grupo, directo y sin animación; Inicio arriba de todo y Fin al fondo (listener `keydown`; con un casillero elegido, ↑ ↓ mueven la selección).
 Condicionales de grilla y totales prendidos (como en programar-jefes) con los avisos de los criterios nuevos (N T MS, SA-DO/DO-LU partido);
 `CONDICIONALES = true`; el franco en rojo del resumen queda.
 No es gemela de progjefes ni de la app de cajeros: los cambios de acá no van a otros repositorios.

@@ -1120,26 +1120,31 @@ function ajustarTot(){
 }
 function fijarTotales(){ altoDosGrupos(); fijarSticky(); }
 window.addEventListener("resize",()=>fijarTotales());
-/* ---- la ruedita del mouse salta de grupo en grupo (cada grupo queda con su fila de días arriba) ---- */
+/* ---- como en Cajeros: la ruedita del mouse queda normal (sin saltos); las flechas ↑ ↓ (y Re Pág / Av Pág) saltan de
+   grupo en grupo, directo y sin animación; Inicio va arriba de todo y Fin abajo de todo.
+   Si hay un casillero elegido, las flechas siguen moviendo la selección. ---- */
 (function(){
   const card=document.getElementById("gridCard");
-  let quieto=0, acum=0;
   const topes=()=>{ const cr=card.getBoundingClientRect();
     return [...card.querySelectorAll("#grid thead tr, #grid tr.medio")].map(tr=>Math.max(0, Math.round(card.scrollTop + tr.getBoundingClientRect().top - cr.top - 4))); };
-  card.addEventListener("wheel",e=>{
-    if(e.ctrlKey || e.shiftKey || Math.abs(e.deltaX)>Math.abs(e.deltaY)) return;   // zoom o desplazamiento de costado: normal
-    if(document.body.classList.contains("view-pref") || !card.querySelector("#grid tr.medio")) return;
+  const irA=y=>{ const max=card.scrollHeight-card.clientHeight; card.style.scrollBehavior="auto"; card.scrollTop=Math.max(0,Math.min(max,y)); };
+  document.addEventListener("keydown",e=>{
+    const k=e.key;
+    if(!["ArrowDown","ArrowUp","PageDown","PageUp","Home","End"].includes(k)) return;
+    if(e.ctrlKey||e.altKey||e.metaKey||e.shiftKey||e.defaultPrevented) return;
+    if(SEL && (k==="ArrowDown"||k==="ArrowUp")) return;          // mueve la selección (lo hace el teclado de la grilla)
+    const t=e.target; if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(document.body.classList.contains("view-pref") || !card.offsetParent) return;
+    if([...document.querySelectorAll(".pop, #gate")].some(x=>x.offsetParent)) return;   // hay una ventana abierta
+    const tp=topes(); if(tp.length<2) return;
     e.preventDefault();
-    const ahora=Date.now();
-    if(ahora<quieto){ return; }                                   // todavía se está moviendo al grupo anterior
-    acum+=e.deltaY; if(Math.abs(acum)<30) return;                 // el touchpad manda muchos movimientos chiquitos
-    const dir=acum>0?1:-1; acum=0;
-    const t=topes(), y=card.scrollTop, max=card.scrollHeight-card.clientHeight;
-    let dest = dir>0 ? t.find(x=>x>y+6) : [...t].reverse().find(x=>x<y-6);
-    if(dest===undefined) dest = dir>0 ? max : 0;
-    card.scrollTo({top:Math.min(dest,max), behavior:"smooth"});
-    quieto=ahora+380;
-  },{passive:false});
+    if(k==="Home") return irA(0);
+    if(k==="End") return irA(card.scrollHeight);
+    const y=card.scrollTop, baja=(k==="ArrowDown"||k==="PageDown");
+    let dest = baja ? tp.find(x=>x>y+6) : [...tp].reverse().find(x=>x<y-6);
+    if(dest===undefined) dest = baja ? card.scrollHeight : 0;
+    irA(dest);
+  });
   // al terminar de desplazarse: si cambió el grupo de arriba, se reacomodan los totales
   let finT=null; card.addEventListener("scroll",()=>{ clearTimeout(finT); finT=setTimeout(()=>{
     const cr=card.getBoundingClientRect(), tops=[...card.querySelectorAll("#grid thead tr, #grid tr.medio")].map(tr=>card.scrollTop+tr.getBoundingClientRect().top-cr.top);
